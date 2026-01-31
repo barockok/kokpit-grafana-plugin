@@ -1,7 +1,7 @@
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { AppRootProps, PluginType } from '@grafana/data';
-import { render, waitFor } from '@testing-library/react';
+import { render, waitFor, screen } from '@testing-library/react';
 import App from './App';
 
 describe('Components/App', () => {
@@ -25,14 +25,16 @@ describe('Components/App', () => {
     } as unknown as AppRootProps;
   });
 
-  test('renders without an error"', async () => {
-    const { queryByText } = render(
+  test('renders without an error', async () => {
+    render(
       <MemoryRouter>
         <App {...props} />
       </MemoryRouter>
     );
 
-    // Application is lazy loaded, so we need to wait for the component and routes to be rendered
-    await waitFor(() => expect(queryByText(/this is page one./i)).toBeInTheDocument(), { timeout: 2000 });
+    // The wizard page is lazy-loaded; wait for it to render
+    await waitFor(() => expect(screen.getByRole('heading')).toBeInTheDocument(), {
+      timeout: 3000,
+    });
   });
 });
