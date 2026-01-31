@@ -1,115 +1,98 @@
-# Grafana app plugin template
+# Kokpit SLO
 
-This template is a starting point for building an app plugin for Grafana.
+SLO configuration wizard for Grafana with live dashboard preview.
 
-## What are Grafana app plugins?
+## Features
 
-App plugins can let you create a custom out-of-the-box monitoring experience by custom pages, nested data sources and panel plugins.
+- 3-step wizard: SLO Basics, SLI Queries, Review & Export
+- Live Grafana panel preview as you configure
+- Generates production-ready YAML config for the Kokpit CLI
+- Supports ratio and custom SLI types
+- Composite SLO with weighted, minimum, or average methods
+- Error budget burn rate alert configuration
+- Template variable substitution in PromQL queries
 
-## Get started
+## Installation
 
-### Frontend
+### From Grafana Plugin Catalog
 
-1. Install dependencies
+1. In Grafana, go to **Administration > Plugins**
+2. Search for "Kokpit SLO"
+3. Click **Install**
 
-   ```bash
-   npm install
-   ```
+### Manual Installation
 
-2. Build plugin in development mode and run in watch mode
+1. Download the latest release from [GitHub Releases](https://github.com/barockok/kokpit/releases)
+2. Extract the archive to your Grafana plugins directory (default: `/var/lib/grafana/plugins/`)
+3. Restart Grafana
 
-   ```bash
-   npm run dev
-   ```
+## Usage
 
-3. Build plugin in production mode
+1. Navigate to **Kokpit SLO** in the Grafana sidebar
+2. **Step 1 - SLO Basics**: Enter the SLO name, target (e.g., 99.9%), and optionally add tags and variables
+3. **Step 2 - SLI Queries**: Select a datasource, choose an SLI type (ratio or custom), and enter your PromQL query. Add multiple SLIs and configure composite calculation if needed
+4. **Step 3 - Review**: Preview live dashboard panels (SLI Trend, Error Budget, Burn Rate). Export the generated YAML configuration
 
-   ```bash
-   npm run build
-   ```
+The exported YAML is used with the [Kokpit CLI](https://github.com/barockok/kokpit) to provision Grafana dashboards, alert rules, and Prometheus recording rules.
 
-4. Run the tests (using Jest)
+## Configuration
 
-   ```bash
-   # Runs the tests and watches for changes, requires git init first
-   npm run test
+The plugin has no required configuration. Once installed and enabled, navigate to it from the Grafana sidebar.
 
-   # Exits after running all the tests
-   npm run test:ci
-   ```
+### Supported Datasources
 
-5. Spin up a Grafana instance and run the plugin inside it (using Docker)
+Any Prometheus-compatible datasource can be selected in the SLI query step.
 
-   ```bash
-   npm run server
-   ```
+### Template Variables
 
-6. Run the E2E tests (using Playwright)
+Use `{{window}}` in PromQL queries for automatic window substitution. Custom variables can be defined in Step 1 and referenced as `{{.variableName}}`.
 
-   ```bash
-   # Spins up a Grafana instance first that we tests against
-   npm run server
+## Development
 
-   # If you wish to start a certain Grafana version. If not specified will use latest by default
-   GRAFANA_VERSION=11.3.0 npm run server
+### Prerequisites
 
-   # Starts the tests
-   npm run e2e
-   ```
+- Node.js >= 22
+- Docker and Docker Compose
 
-7. Run the linter
+### Setup
 
-   ```bash
-   npm run lint
+```bash
+# Install dependencies
+npm install
 
-   # or
+# Start development server with hot reload
+npm run dev
 
-   npm run lint:fix
-   ```
+# In another terminal, start Grafana with the plugin
+npm run server
 
-# Distributing your plugin
+# Open http://localhost:3000
+```
 
-When distributing a Grafana plugin either within the community or privately the plugin must be signed so the Grafana application can verify its authenticity. This can be done with the `@grafana/sign-plugin` package.
+### Testing
 
-_Note: It's not necessary to sign a plugin during development. The docker development environment that is scaffolded with `@grafana/create-plugin` caters for running the plugin without a signature._
+```bash
+# Unit tests
+npm run test:ci
 
-## Initial steps
+# E2E tests (requires running server)
+npm run e2e
 
-Before signing a plugin please read the Grafana [plugin publishing and signing criteria](https://grafana.com/legal/plugins/#plugin-publishing-and-signing-criteria) documentation carefully.
+# Linting and type checking
+npm run lint
+npm run typecheck
+```
 
-`@grafana/create-plugin` has added the necessary commands and workflows to make signing and distributing a plugin via the grafana plugins catalog as straightforward as possible.
+### Building
 
-Before signing a plugin for the first time please consult the Grafana [plugin signature levels](https://grafana.com/legal/plugins/#what-are-the-different-classifications-of-plugins) documentation to understand the differences between the types of signature level.
+```bash
+npm run build
+```
 
-1. Create a [Grafana Cloud account](https://grafana.com/signup).
-2. Make sure that the first part of the plugin ID matches the slug of your Grafana Cloud account.
-   - _You can find the plugin ID in the `plugin.json` file inside your plugin directory. For example, if your account slug is `acmecorp`, you need to prefix the plugin ID with `acmecorp-`._
-3. Create a Grafana Cloud API key with the `PluginPublisher` role.
-4. Keep a record of this API key as it will be required for signing a plugin
+## License
 
-## Signing a plugin
+Apache 2.0 - See [LICENSE](LICENSE) for details.
 
-### Using Github actions release workflow
+## Changelog
 
-If the plugin is using the github actions supplied with `@grafana/create-plugin` signing a plugin is included out of the box. The [release workflow](./.github/workflows/release.yml) can prepare everything to make submitting your plugin to Grafana as easy as possible. Before being able to sign the plugin however a secret needs adding to the Github repository.
-
-1. Please navigate to "settings > secrets > actions" within your repo to create secrets.
-2. Click "New repository secret"
-3. Name the secret "GRAFANA_API_KEY"
-4. Paste your Grafana Cloud API key in the Secret field
-5. Click "Add secret"
-
-#### Push a version tag
-
-To trigger the workflow we need to push a version tag to github. This can be achieved with the following steps:
-
-1. Run `npm version <major|minor|patch>`
-2. Run `git push origin main --follow-tags`
-
-## Learn more
-
-Below you can find source code for existing app plugins and other related documentation.
-
-- [Basic app plugin example](https://github.com/grafana/grafana-plugin-examples/tree/master/examples/app-basic#readme)
-- [`plugin.json` documentation](https://grafana.com/developers/plugin-tools/reference/plugin-jsonplugin-json)
-- [Sign a plugin](https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin)
+See [CHANGELOG.md](CHANGELOG.md) for release history.
