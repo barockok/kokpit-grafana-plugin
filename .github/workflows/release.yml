@@ -22,4 +22,3 @@ jobs:
       - uses: grafana/plugin-actions/build-plugin@build-plugin/v1.0.2
         with:
           policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
-          root_urls: https://zidmubarock.grafana.net
