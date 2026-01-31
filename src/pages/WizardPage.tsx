@@ -30,7 +30,7 @@ function WizardPage() {
           />
         );
       case 2:
-        return <StepReview state={wizard.state} update={wizard.update} />;
+        return <StepReview state={wizard.state} update={wizard.update} onReset={wizard.reset} />;
       default:
         return null;
     }
@@ -40,16 +40,11 @@ function WizardPage() {
     <PluginPage>
       <div className={styles.container}>
         <div className={styles.wizard}>
-          <div className={styles.header}>
-            <TabsBar>
-              {STEP_LABELS.map((label, i) => (
-                <Tab key={label} label={label} active={wizard.step === i} onChangeTab={() => wizard.goToStep(i)} />
-              ))}
-            </TabsBar>
-            <Button variant="destructive" icon="repeat" size="sm" onClick={wizard.reset}>
-              Start Over
-            </Button>
-          </div>
+          <TabsBar>
+            {STEP_LABELS.map((label, i) => (
+              <Tab key={label} label={label} active={wizard.step === i} onChangeTab={() => wizard.goToStep(i)} />
+            ))}
+          </TabsBar>
           <div className={styles.stepContent}>{renderStep()}</div>
           <div className={styles.nav}>
             {wizard.step > 0 && (
@@ -77,35 +72,33 @@ function getStyles(theme: GrafanaTheme2) {
     container: css({
       display: 'flex',
       gap: theme.spacing(2),
-      height: '100%',
-      minHeight: '600px',
+      height: 'calc(100vh - 160px)',
+      minHeight: '400px',
     }),
     wizard: css({
       flex: '0 0 40%',
       display: 'flex',
       flexDirection: 'column',
       gap: theme.spacing(2),
-      overflow: 'auto',
-    }),
-    header: css({
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: theme.spacing(1),
+      overflow: 'hidden',
     }),
     stepContent: css({
       flex: 1,
+      minHeight: 0,
       overflow: 'auto',
     }),
     nav: css({
       display: 'flex',
       justifyContent: 'space-between',
+      flexShrink: 0,
       paddingTop: theme.spacing(1),
       borderTop: `1px solid ${theme.colors.border.weak}`,
     }),
     preview: css({
       flex: '0 0 58%',
-      overflow: 'auto',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
       borderLeft: `1px solid ${theme.colors.border.weak}`,
       paddingLeft: theme.spacing(2),
     }),

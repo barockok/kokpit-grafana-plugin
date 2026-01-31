@@ -8,6 +8,7 @@ import type { WizardState } from '../../lib/yaml-generator';
 interface Props {
   state: WizardState;
   update: <K extends keyof WizardState>(key: K, value: WizardState[K]) => void;
+  onReset: () => void;
 }
 
 const SEVERITY_OPTIONS: Array<SelectableValue<string>> = [
@@ -16,7 +17,7 @@ const SEVERITY_OPTIONS: Array<SelectableValue<string>> = [
   { label: 'info', value: 'info' },
 ];
 
-export function StepReview({ state, update }: Props) {
+export function StepReview({ state, update, onReset }: Props) {
   const styles = useStyles2(getStyles);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -141,6 +142,9 @@ export function StepReview({ state, update }: Props) {
           </Button>
           <Button variant="secondary" icon="copy" onClick={copyToClipboard}>
             {copied ? 'Copied!' : 'Copy to Clipboard'}
+          </Button>
+          <Button variant="destructive" icon="repeat" onClick={onReset} style={{ marginLeft: 'auto' }}>
+            Start Over
           </Button>
         </div>
       </div>

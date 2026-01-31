@@ -330,6 +330,7 @@ export function DashboardPreview({ state }: Props) {
         />
       </div>
 
+      <div className={styles.scrollContent}>
       {!exprs ? (
         <div className={styles.empty}>Configure at least one SLI with a name and query to see the preview.</div>
       ) : (
@@ -443,6 +444,7 @@ export function DashboardPreview({ state }: Props) {
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }
@@ -453,11 +455,20 @@ function getStyles(theme: GrafanaTheme2) {
       display: 'flex',
       flexDirection: 'column',
       gap: theme.spacing(2),
+      flex: 1,
+      minHeight: 0,
+      overflow: 'hidden',
+    }),
+    scrollContent: css({
+      flex: 1,
+      minHeight: 0,
+      overflow: 'auto',
     }),
     header: css({
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
+      flexShrink: 0,
     }),
     empty: css({
       color: theme.colors.text.secondary,
