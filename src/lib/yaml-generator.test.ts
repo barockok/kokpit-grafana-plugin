@@ -1,7 +1,6 @@
 import jsYaml from 'js-yaml';
 import { createDefaultState, createDefaultSLI, stateToConfig, generateYAML } from './yaml-generator';
 import type { WizardState, SLIState } from './yaml-generator';
-import { DEFAULTS } from './schema';
 
 /** Build a minimal valid WizardState for testing stateToConfig. */
 function minimalState(overrides?: Partial<WizardState>): WizardState {
