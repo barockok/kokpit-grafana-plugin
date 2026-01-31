@@ -139,3 +139,102 @@ export function usePrometheusQuery({
 
   return data;
 }
+
+interface MultiQueryTarget {
+  expr: string;
+  refId: string;
+  legendFormat?: string;
+}
+
+export function usePrometheusQueries({
+  targets,
+  datasource,
+  window = '5m',
+}: {
+  targets: MultiQueryTarget[];
+  datasource: string;
+  window?: string;
+}): PanelData | undefined {
+  const [data, setData] = useState<PanelData | undefined>(undefined);
+  const runnerRef = useRef<ReturnType<typeof createQueryRunner> | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const targetsKey = JSON.stringify(targets);
+
+  useEffect(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+
+    if (targets.length === 0 || targets.every((t) => !t.expr)) {
+      setData(undefined);
+      return;
+    }
+
+    timerRef.current = setTimeout(() => {
+      const dsSettings = getDataSourceSrv().getInstanceSettings(datasource);
+      if (!dsSettings) {
+        setData({
+          state: LoadingState.Error,
+          series: [],
+          timeRange: makeTimeRange(window),
+          errors: [{ message: `Datasource "${datasource}" not found` }],
+        } as PanelData);
+        return;
+      }
+
+      const dsRef: DataSourceRef = { uid: dsSettings.uid, type: dsSettings.type };
+
+      if (runnerRef.current) {
+        runnerRef.current.cancel();
+        runnerRef.current.destroy();
+      }
+
+      const runner = createQueryRunner();
+      runnerRef.current = runner;
+
+      const subscription = runner.get().subscribe((panelData) => {
+        setData(panelData);
+      });
+
+      runner.run({
+        datasource: dsRef,
+        queries: targets.map((t) => ({
+          refId: t.refId,
+          expr: t.expr,
+          range: true,
+          instant: false,
+          legendFormat: t.legendFormat ?? t.refId,
+        })),
+        timezone: 'browser',
+        timeRange: makeTimeRange(window),
+        maxDataPoints: 500,
+        minInterval: null,
+      });
+
+      (runner as any).__sub = subscription;
+    }, DEBOUNCE_MS);
+
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [targetsKey, datasource, window]);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+      if (runnerRef.current) {
+        runnerRef.current.cancel();
+        runnerRef.current.destroy();
+        if ((runnerRef.current as any).__sub) {
+          (runnerRef.current as any).__sub.unsubscribe();
+        }
+      }
+    };
+  }, []);
+
+  return data;
+}

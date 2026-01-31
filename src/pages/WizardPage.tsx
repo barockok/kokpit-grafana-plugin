@@ -40,11 +40,16 @@ function WizardPage() {
     <PluginPage>
       <div className={styles.container}>
         <div className={styles.wizard}>
-          <TabsBar>
-            {STEP_LABELS.map((label, i) => (
-              <Tab key={label} label={label} active={wizard.step === i} onChangeTab={() => wizard.goToStep(i)} />
-            ))}
-          </TabsBar>
+          <div className={styles.header}>
+            <TabsBar>
+              {STEP_LABELS.map((label, i) => (
+                <Tab key={label} label={label} active={wizard.step === i} onChangeTab={() => wizard.goToStep(i)} />
+              ))}
+            </TabsBar>
+            <Button variant="destructive" icon="repeat" size="sm" onClick={wizard.reset}>
+              Start Over
+            </Button>
+          </div>
           <div className={styles.stepContent}>{renderStep()}</div>
           <div className={styles.nav}>
             {wizard.step > 0 && (
@@ -81,6 +86,12 @@ function getStyles(theme: GrafanaTheme2) {
       flexDirection: 'column',
       gap: theme.spacing(2),
       overflow: 'auto',
+    }),
+    header: css({
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: theme.spacing(1),
     }),
     stepContent: css({
       flex: 1,

@@ -5,7 +5,7 @@ import { GrafanaTheme2, LoadingState, type PanelData, type SelectableValue } fro
 import { PanelRenderer } from '@grafana/runtime';
 import { buildSLIExpr, buildFinalSLIExpr, buildBurnRateExpr, buildErrorBudgetExpr } from '../../lib/expression-builder';
 import { useContainerSize } from '../../hooks/useContainerSize';
-import { usePrometheusQuery } from '../../hooks/usePrometheusQuery';
+import { usePrometheusQuery, usePrometheusQueries } from '../../hooks/usePrometheusQuery';
 import { createStaticStatData } from '../../lib/static-panel-data';
 import type { WizardState } from '../../lib/yaml-generator';
 import type { SLI } from '../../lib/schema';
@@ -122,6 +122,88 @@ function PreviewPanel({
           <code className={styles.expr}>{expr}</code>
         </div>
       )}
+    </div>
+  );
+}
+
+function SLIBreakdownPanel({
+  perSLI,
+  datasource,
+  window,
+}: {
+  perSLI: Array<{ name: string; expr: string; datasource: string }>;
+  datasource: string;
+  window: string;
+}) {
+  const styles = useStyles2(getStyles);
+  const { ref, width: containerWidth } = useContainerSize();
+
+  const targets = useMemo(
+    () =>
+      perSLI.map((s, i) => ({
+        expr: s.expr,
+        refId: String.fromCharCode(65 + i),
+        legendFormat: s.name,
+      })),
+    [perSLI]
+  );
+
+  const data = usePrometheusQueries({
+    targets,
+    datasource,
+    window,
+  });
+
+  const isLoading = data?.state === LoadingState.Loading;
+  const isError = data?.state === LoadingState.Error;
+
+  return (
+    <div className={`${styles.panel} ${styles.panelFull}`}>
+      <div className={styles.panelHeader}>
+        <span className={styles.panelTitle}>SLI Breakdown</span>
+        <Badge text="timeseries" color="orange" />
+      </div>
+      <div ref={ref} className={styles.panelBody} style={{ height: TIMESERIES_HEIGHT }}>
+        {isLoading && (
+          <div className={styles.centered}>
+            <Spinner />
+          </div>
+        )}
+        {isError && (
+          <div className={styles.errorText}>
+            {data?.errors?.[0]?.message ?? 'Query error'}
+          </div>
+        )}
+        {data && !isLoading && !isError && containerWidth > 0 ? (
+          <PanelRenderer
+            pluginId="timeseries"
+            title=""
+            data={data}
+            width={containerWidth}
+            height={TIMESERIES_HEIGHT}
+            options={{ legend: { displayMode: 'list', placement: 'bottom' } }}
+            fieldConfig={{
+              defaults: {
+                unit: 'percentunit',
+                custom: { lineWidth: 2, fillOpacity: 10, spanNulls: true },
+              },
+              overrides: [],
+            }}
+          />
+        ) : (
+          !isLoading &&
+          !isError && (
+            <code className={styles.expr}>
+              {perSLI.map((s) => s.expr).join('\n')}
+            </code>
+          )
+        )}
+      </div>
+      <div className={styles.panelSubtitle}>
+        <code className={styles.expr}>
+          {perSLI.map((s) => `${s.name}: ${s.expr}`).join(' | ')}
+        </code>
+      </div>
     </div>
   );
 }
@@ -247,6 +329,7 @@ export function DashboardPreview({ state }: Props) {
             window={previewWindow}
             width="quarter"
             height={PANEL_HEIGHT}
+            options={{ legend: { displayMode: 'hidden' } }}
             fieldConfig={{
               defaults: {
                 custom: { lineWidth: 2, fillOpacity: 10, spanNulls: true },
@@ -269,6 +352,7 @@ export function DashboardPreview({ state }: Props) {
             window={previewWindow}
             width="full"
             height={TIMESERIES_HEIGHT}
+            options={{ legend: { displayMode: 'hidden' } }}
             fieldConfig={{
               defaults: {
                 unit: 'percentunit',
@@ -279,35 +363,11 @@ export function DashboardPreview({ state }: Props) {
           />
 
           {slis.length >= 2 && (
-            <>
-              <div className={styles.sectionTitle}>
-                <Badge text="SLI Breakdown" color="blue" />
-              </div>
-              {exprs.perSLI.map((s) => (
-                <PreviewPanel
-                  key={s.name}
-                  title={s.name}
-                  pluginId="stat"
-                  expr={s.expr}
-                  datasource={s.datasource}
-                  window={previewWindow}
-                  width="half"
-                  height={PANEL_HEIGHT}
-                  options={{ colorMode: 'background', graphMode: 'area' }}
-                  fieldConfig={{
-                    defaults: {
-                      unit: 'percentunit',
-                      thresholds: { mode: 'absolute', steps: [
-                        { color: 'red', value: null },
-                        { color: 'orange', value: state.target - 0.01 },
-                        { color: 'green', value: state.target },
-                      ]},
-                    },
-                    overrides: [],
-                  }}
-                />
-              ))}
-            </>
+            <SLIBreakdownPanel
+              perSLI={exprs.perSLI}
+              datasource={ds}
+              window={previewWindow}
+            />
           )}
         </div>
       )}

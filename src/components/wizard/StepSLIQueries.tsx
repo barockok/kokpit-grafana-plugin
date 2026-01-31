@@ -1,6 +1,6 @@
 import React from 'react';
 import { css } from '@emotion/css';
-import { useStyles2, Input, Field, Select, Button, IconButton, TextArea, RadioButtonGroup } from '@grafana/ui';
+import { useStyles2, Input, Field, Select, Button, IconButton, TextArea, RadioButtonGroup, Slider } from '@grafana/ui';
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import { getDataSourceSrv } from '@grafana/runtime';
 import type { WizardState, SLIState } from '../../lib/yaml-generator';
@@ -83,18 +83,20 @@ export function StepSLIQueries({ state, update, updateSLI, addSLI, removeSLI }: 
 
           {sli.type === 'custom' && (
             <div className={styles.normalizeRow}>
-              <Field label="Normalize Min" description="Value that maps to 1.0 (best)">
+              <Field label="Normalize Min" description="Best-case value, maps to 1.0 (e.g. 0.0)">
                 <Input
                   type="number"
-                  step="0.1"
+                  step={0.1}
+                  placeholder="0.0"
                   value={sli.normalizeMin}
                   onChange={(e) => updateSLI(i, { normalizeMin: parseFloat(e.currentTarget.value) || 0 })}
                 />
               </Field>
-              <Field label="Normalize Max" description="Value that maps to 0.0 (worst)">
+              <Field label="Normalize Max" description="Worst-case value, maps to 0.0 (e.g. 1000.0)">
                 <Input
                   type="number"
-                  step="0.1"
+                  step={0.1}
+                  placeholder="1.0"
                   value={sli.normalizeMax}
                   onChange={(e) => updateSLI(i, { normalizeMax: parseFloat(e.currentTarget.value) || 0 })}
                 />
@@ -123,19 +125,19 @@ export function StepSLIQueries({ state, update, updateSLI, addSLI, removeSLI }: 
               {state.slis
                 .filter((s) => s.name)
                 .map((sli) => (
-                  <Field key={sli.name} label={sli.name}>
-                    <Input
-                      type="number"
-                      step="0.1"
+                  <Field key={sli.name} label={`${sli.name} — ${((state.compositeWeights[sli.name] ?? 0) * 100).toFixed(0)}%`}>
+                    <Slider
                       min={0}
                       max={1}
+                      step={0.05}
                       value={state.compositeWeights[sli.name] ?? 0}
-                      onChange={(e) =>
+                      onChange={(v) =>
                         update('compositeWeights', {
                           ...state.compositeWeights,
-                          [sli.name]: parseFloat(e.currentTarget.value) || 0,
+                          [sli.name]: v,
                         })
                       }
+                      inputId={`weight-${sli.name}`}
                     />
                   </Field>
                 ))}
@@ -181,8 +183,8 @@ function getStyles(theme: GrafanaTheme2) {
     }),
     weights: css({
       display: 'flex',
-      gap: theme.spacing(2),
-      flexWrap: 'wrap',
+      flexDirection: 'column',
+      gap: theme.spacing(1),
     }),
   };
 }
