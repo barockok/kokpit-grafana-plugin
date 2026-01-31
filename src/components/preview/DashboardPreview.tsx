@@ -43,14 +43,13 @@ function primaryDatasource(slis: SLI[]): string {
   return slis[0]?.datasource ?? 'prometheus';
 }
 
-/** Panel that renders a live Grafana visualization via PanelRenderer. */
-function PreviewPanel({
+/** Instant-query panel (stat, gauge). */
+function StatPanel({
   title,
   pluginId,
   expr,
   datasource,
   staticData,
-  queryType = 'instant',
   window,
   width: widthClass,
   height: panelHeight,
@@ -62,7 +61,6 @@ function PreviewPanel({
   expr?: string;
   datasource?: string;
   staticData?: PanelData;
-  queryType?: 'instant' | 'range';
   window: string;
   width: 'quarter' | 'half' | 'full';
   height: number;
@@ -74,7 +72,7 @@ function PreviewPanel({
   const liveData = usePrometheusQuery({
     expr: staticData ? '' : (expr ?? ''),
     datasource: datasource ?? 'prometheus',
-    queryType,
+    queryType: 'instant',
     window,
   });
 
@@ -92,14 +90,10 @@ function PreviewPanel({
       </div>
       <div ref={ref} className={styles.panelBody} style={{ height: panelHeight }}>
         {isLoading && (
-          <div className={styles.centered}>
-            <Spinner />
-          </div>
+          <div className={styles.centered}><Spinner /></div>
         )}
         {isError && (
-          <div className={styles.errorText}>
-            {data?.errors?.[0]?.message ?? 'Query error'}
-          </div>
+          <div className={styles.errorText}>{data?.errors?.[0]?.message ?? 'Query error'}</div>
         )}
         {data && !isLoading && !isError && containerWidth > 0 ? (
           <PanelRenderer
@@ -122,6 +116,86 @@ function PreviewPanel({
           <code className={styles.expr}>{expr}</code>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Range-query timeseries panel — follows SLIBreakdownPanel pattern exactly. */
+function TimeseriesPanel({
+  title,
+  expr,
+  datasource,
+  window,
+  width: widthClass,
+  height: panelHeight,
+  options,
+  fieldConfig,
+}: {
+  title: string;
+  expr: string;
+  datasource: string;
+  window: string;
+  width: 'quarter' | 'half' | 'full';
+  height: number;
+  options?: Record<string, unknown>;
+  fieldConfig?: Record<string, unknown>;
+}) {
+  const styles = useStyles2(getStyles);
+  const { ref, width: containerWidth } = useContainerSize();
+
+  const targets = useMemo(
+    () => [{ expr, refId: 'A', legendFormat: title }],
+    [expr, title]
+  );
+
+  const data = usePrometheusQueries({
+    targets,
+    datasource,
+    window,
+  });
+
+  const isLoading = data?.state === LoadingState.Loading;
+  const isError = data?.state === LoadingState.Error;
+  const widthCls =
+    widthClass === 'full' ? styles.panelFull : widthClass === 'half' ? styles.panelHalf : styles.panelQuarter;
+
+  return (
+    <div className={`${styles.panel} ${widthCls}`}>
+      <div className={styles.panelHeader}>
+        <span className={styles.panelTitle}>{title}</span>
+        <Badge text="timeseries" color="orange" />
+      </div>
+      <div ref={ref} className={styles.panelBody} style={{ height: panelHeight }}>
+        {isLoading && (
+          <div className={styles.centered}>
+            <Spinner />
+          </div>
+        )}
+        {isError && (
+          <div className={styles.errorText}>
+            {data?.errors?.[0]?.message ?? 'Query error'}
+          </div>
+        )}
+        {data && !isLoading && !isError && containerWidth > 0 ? (
+          <PanelRenderer
+            pluginId="timeseries"
+            title=""
+            data={data}
+            width={containerWidth}
+            height={panelHeight}
+            options={options ?? {}}
+            fieldConfig={fieldConfig ?? { defaults: {}, overrides: [] }}
+          />
+        ) : (
+          !isLoading &&
+          !isError && (
+            <code className={styles.expr}>{expr}</code>
+          )
+        )}
+      </div>
+      <div className={styles.panelSubtitle}>
+        <code className={styles.expr}>{expr}</code>
+      </div>
     </div>
   );
 }
@@ -260,7 +334,7 @@ export function DashboardPreview({ state }: Props) {
         <div className={styles.empty}>Configure at least one SLI with a name and query to see the preview.</div>
       ) : (
         <div className={styles.panels}>
-          <PreviewPanel
+          <StatPanel
             title="Target"
             pluginId="stat"
             staticData={targetData}
@@ -274,7 +348,7 @@ export function DashboardPreview({ state }: Props) {
             }}
           />
 
-          <PreviewPanel
+          <StatPanel
             title="SLI Value"
             pluginId="stat"
             expr={exprs.sli}
@@ -296,7 +370,7 @@ export function DashboardPreview({ state }: Props) {
             }}
           />
 
-          <PreviewPanel
+          <StatPanel
             title="Error Budget"
             pluginId="gauge"
             expr={exprs.errorBudget}
@@ -320,16 +394,14 @@ export function DashboardPreview({ state }: Props) {
             }}
           />
 
-          <PreviewPanel
+          <TimeseriesPanel
             title="Burn Rate"
-            pluginId="timeseries"
             expr={exprs.burnRate}
             datasource={ds}
-            queryType="range"
             window={previewWindow}
             width="quarter"
             height={PANEL_HEIGHT}
-            options={{ legend: { displayMode: 'hidden' } }}
+            options={{ legend: { displayMode: 'list', placement: 'bottom' } }}
             fieldConfig={{
               defaults: {
                 custom: { lineWidth: 2, fillOpacity: 10, spanNulls: true },
@@ -343,16 +415,14 @@ export function DashboardPreview({ state }: Props) {
             }}
           />
 
-          <PreviewPanel
+          <TimeseriesPanel
             title="SLI Trend"
-            pluginId="timeseries"
             expr={exprs.sli}
             datasource={ds}
-            queryType="range"
             window={previewWindow}
             width="full"
             height={TIMESERIES_HEIGHT}
-            options={{ legend: { displayMode: 'hidden' } }}
+            options={{ legend: { displayMode: 'list', placement: 'bottom' } }}
             fieldConfig={{
               defaults: {
                 unit: 'percentunit',
