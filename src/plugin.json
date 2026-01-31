@@ -1,0 +1,33 @@
+{
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
+  "type": "app",
+  "name": "Kokpit SLO",
+  "id": "kokpit-slo-app",
+  "info": {
+    "keywords": ["slo", "sli", "error-budget"],
+    "description": "SLO config wizard with live dashboard preview",
+    "author": {
+      "name": "Kokpit"
+    },
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "screenshots": [],
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
+  },
+  "includes": [
+    {
+      "type": "page",
+      "name": "SLO Wizard",
+      "path": "/a/%PLUGIN_ID%/wizard",
+      "addToNav": true,
+      "defaultNav": true
+    }
+  ],
+  "dependencies": {
+    "grafanaDependency": ">=11.6.0",
+    "plugins": []
+  }
+}
