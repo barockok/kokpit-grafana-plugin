@@ -356,6 +356,8 @@ export function DashboardPreview({ state }: Props) {
             fieldConfig={{
               defaults: {
                 unit: 'percentunit',
+                min: 0,
+                max: 1,
                 custom: { lineWidth: 2, fillOpacity: 10, spanNulls: true },
               },
               overrides: [],
