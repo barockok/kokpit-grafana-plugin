@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { css } from '@emotion/css';
 import { useStyles2, Select, Badge, Spinner } from '@grafana/ui';
-import { GrafanaTheme2, LoadingState, type PanelData, type SelectableValue } from '@grafana/data';
+import { GrafanaTheme2, type FieldConfigSource, LoadingState, type PanelData, type SelectableValue, ThresholdsMode } from '@grafana/data';
 import { PanelRenderer } from '@grafana/runtime';
 import { buildSLIExpr, buildFinalSLIExpr, buildBurnRateExpr, buildErrorBudgetExpr } from '../../lib/expression-builder';
 import { useContainerSize } from '../../hooks/useContainerSize';
@@ -65,7 +65,7 @@ function StatPanel({
   width: 'quarter' | 'half' | 'full';
   height: number;
   options?: Record<string, unknown>;
-  fieldConfig?: Record<string, unknown>;
+  fieldConfig?: FieldConfigSource;
 }) {
   const styles = useStyles2(getStyles);
   const { ref, width: containerWidth } = useContainerSize();
@@ -138,7 +138,7 @@ function TimeseriesPanel({
   width: 'quarter' | 'half' | 'full';
   height: number;
   options?: Record<string, unknown>;
-  fieldConfig?: Record<string, unknown>;
+  fieldConfig?: FieldConfigSource;
 }) {
   const styles = useStyles2(getStyles);
   const { ref, width: containerWidth } = useContainerSize();
@@ -344,7 +344,7 @@ export function DashboardPreview({ state }: Props) {
             height={PANEL_HEIGHT}
             options={{ colorMode: 'background', graphMode: 'none' }}
             fieldConfig={{
-              defaults: { unit: 'percent', thresholds: { mode: 'absolute', steps: [{ color: 'green', value: null }] } },
+              defaults: { unit: 'percent', thresholds: { mode: ThresholdsMode.Absolute, steps: [{ color: 'green', value: -Infinity }] } },
               overrides: [],
             }}
           />
@@ -361,8 +361,8 @@ export function DashboardPreview({ state }: Props) {
             fieldConfig={{
               defaults: {
                 unit: 'percentunit',
-                thresholds: { mode: 'absolute', steps: [
-                  { color: 'red', value: null },
+                thresholds: { mode: ThresholdsMode.Absolute, steps: [
+                  { color: 'red', value: -Infinity },
                   { color: 'orange', value: state.target - 0.01 },
                   { color: 'green', value: state.target },
                 ]},
@@ -385,8 +385,8 @@ export function DashboardPreview({ state }: Props) {
                 unit: 'percentunit',
                 min: 0,
                 max: 1,
-                thresholds: { mode: 'absolute', steps: [
-                  { color: 'red', value: null },
+                thresholds: { mode: ThresholdsMode.Absolute, steps: [
+                  { color: 'red', value: -Infinity },
                   { color: 'orange', value: 0.25 },
                   { color: 'green', value: 0.5 },
                 ]},
@@ -406,8 +406,8 @@ export function DashboardPreview({ state }: Props) {
             fieldConfig={{
               defaults: {
                 custom: { lineWidth: 2, fillOpacity: 10, spanNulls: true },
-                thresholds: { mode: 'absolute', steps: [
-                  { color: 'green', value: null },
+                thresholds: { mode: ThresholdsMode.Absolute, steps: [
+                  { color: 'green', value: -Infinity },
                   { color: 'orange', value: 6 },
                   { color: 'red', value: 14.4 },
                 ]},

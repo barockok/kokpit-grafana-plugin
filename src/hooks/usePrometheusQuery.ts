@@ -102,7 +102,7 @@ export function usePrometheusQuery({
             expr,
             instant: queryType === 'instant',
             range: queryType === 'range',
-          },
+          } as any,
         ],
         timezone: 'browser',
         timeRange: makeTimeRange(window),
