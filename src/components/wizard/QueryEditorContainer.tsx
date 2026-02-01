@@ -92,6 +92,7 @@ export function QueryEditorContainer({ datasourceName, query, onChange }: Props)
     const queryObj = {
       refId: 'A',
       expr: query,
+      editorMode: 'code',
     };
 
     return (
@@ -136,6 +137,14 @@ function getStyles(theme: GrafanaTheme2) {
       border: `1px solid ${theme.colors.border.weak}`,
       borderRadius: theme.shape.radius.default,
       padding: theme.spacing(0.5),
+      // Hide the Prometheus query editor options pane (legend, step, type, exemplars)
+      '[data-testid*="prometheus"][data-testid*="options"]': {
+        display: 'none',
+      },
+      // Hide Builder/Code toggle - Kokpit {{window}} templates break the builder parser
+      '[data-testid="QueryEditorModeToggle"]': {
+        display: 'none',
+      },
     }),
     loadingWrapper: css({
       display: 'flex',
