@@ -22,7 +22,7 @@ function loadStep(): number {
     const raw = localStorage.getItem(STORAGE_KEY_STEP);
     if (raw) {
       const n = parseInt(raw, 10);
-      if (n >= 0 && n <= 2) {
+      if (n >= 0 && n <= 3) {
         return n;
       }
     }
@@ -74,8 +74,12 @@ export function useWizardState() {
     setStep(0);
   }, []);
 
-  const nextStep = useCallback(() => setStep((s) => Math.min(s + 1, 2)), []);
-  const prevStep = useCallback(() => setStep((s) => Math.max(s - 1, 0)), []);
+  const setFullState = useCallback((newState: WizardState) => {
+    setState(newState);
+  }, []);
+
+  const nextStep = useCallback(() => setStep((s) => Math.min(s + 1, 3)), []);
+  const prevStep = useCallback(() => setStep((s) => Math.max(s - 1, 1)), []);
   const goToStep = useCallback((s: number) => setStep(s), []);
 
   return {
@@ -85,6 +89,7 @@ export function useWizardState() {
     updateSLI,
     addSLI,
     removeSLI,
+    setFullState,
     reset,
     nextStep,
     prevStep,

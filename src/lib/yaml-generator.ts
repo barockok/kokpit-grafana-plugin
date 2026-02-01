@@ -178,3 +178,114 @@ export function generateYAML(state: WizardState): string {
     noRefs: true,
   });
 }
+
+/** Parse a YAML string back into WizardState. Throws on invalid input. */
+export function parseYAMLToState(yamlString: string): WizardState {
+  const raw = jsYaml.load(yamlString) as Record<string, unknown>;
+  if (!raw || typeof raw !== 'object') {
+    throw new Error('Invalid YAML: expected an object');
+  }
+
+  const config = raw as Partial<SLOConfig>;
+  const slo = config.slo as Partial<SLO> | undefined;
+  if (!slo) {
+    throw new Error('Missing required field: slo');
+  }
+  if (!slo.name) {
+    throw new Error('Missing required field: slo.name');
+  }
+  if (slo.target === undefined || slo.target === null) {
+    throw new Error('Missing required field: slo.target');
+  }
+  if (!Array.isArray(slo.slis) || slo.slis.length === 0) {
+    throw new Error('Missing required field: slo.slis (need at least one SLI)');
+  }
+
+  for (let i = 0; i < slo.slis.length; i++) {
+    const s = slo.slis[i];
+    if (!s.name) {
+      throw new Error(`Missing required field: slo.slis[${i}].name`);
+    }
+    if (!s.type) {
+      throw new Error(`Missing required field: slo.slis[${i}].type`);
+    }
+    if (!s.datasource) {
+      throw new Error(`Missing required field: slo.slis[${i}].datasource`);
+    }
+    if (!s.query) {
+      throw new Error(`Missing required field: slo.slis[${i}].query`);
+    }
+  }
+
+  const base = createDefaultState();
+  const description = typeof slo.description === 'string'
+    ? slo.description
+    : (slo.description as { text?: string })?.text ?? '';
+
+  const state: WizardState = {
+    ...base,
+    name: slo.name,
+    target: slo.target,
+    description,
+    windows: slo.windows ?? base.windows,
+    tags: slo.tags ?? {},
+    variables: slo.variables ?? {},
+    slis: slo.slis.map((s) => ({
+      name: s.name,
+      displayName: s.display_name ?? '',
+      type: s.type,
+      datasource: s.datasource,
+      query: s.query,
+      normalizeMin: s.normalize?.min ?? 0,
+      normalizeMax: s.normalize?.max ?? 1,
+      record: s.record ?? false,
+    })),
+    grafanaFolder: config.grafana?.folder ?? base.grafanaFolder,
+  };
+
+  // Composite
+  if (slo.composite) {
+    state.compositeMethod = slo.composite.method ?? 'average';
+    state.compositeWeights = slo.composite.weights ?? {};
+  }
+
+  // Alerts
+  if (slo.alerts) {
+    state.alertsEnabled = true;
+    if (slo.alerts.mode) {
+      state.alertMode = slo.alerts.mode;
+    }
+    if (slo.alerts.fast_burn) {
+      state.fastBurn = {
+        window: slo.alerts.fast_burn.window,
+        burnRate: slo.alerts.fast_burn.burn_rate,
+        severity: slo.alerts.fast_burn.severity,
+      };
+    }
+    if (slo.alerts.slow_burn) {
+      state.slowBurn = {
+        window: slo.alerts.slow_burn.window,
+        burnRate: slo.alerts.slow_burn.burn_rate,
+        severity: slo.alerts.slow_burn.severity,
+      };
+    }
+  }
+
+  // Dashboard
+  if (slo.dashboard) {
+    if (slo.dashboard.template) {
+      state.dashboardTemplate = slo.dashboard.template;
+    }
+    if (slo.dashboard.mode) {
+      state.dashboardMode = slo.dashboard.mode;
+    }
+    if (slo.dashboard.realtime_mode) {
+      state.realtimeMode = slo.dashboard.realtime_mode;
+    }
+    if (slo.dashboard.realtime_window) {
+      state.realtimeWindow = slo.dashboard.realtime_window;
+    }
+  }
+
+  return state;
+}

@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { css } from '@emotion/css';
 import { PluginPage } from '@grafana/runtime';
 import { useStyles2, TabsBar, Tab, Button } from '@grafana/ui';
 import { GrafanaTheme2 } from '@grafana/data';
 import { useWizardState } from '../hooks/useWizardState';
+import { StepWelcome } from '../components/wizard/StepWelcome';
 import { StepSLOBasics } from '../components/wizard/StepSLOBasics';
 import { StepSLIQueries, useWeightValidation } from '../components/wizard/StepSLIQueries';
 import { StepReview } from '../components/wizard/StepReview';
 import { DashboardPreview } from '../components/preview/DashboardPreview';
+import type { WizardState } from '../lib/yaml-generator';
 
 const STEP_LABELS = ['SLO Definition', 'SLI Queries', 'Review & Export'];
 
@@ -15,13 +17,33 @@ function WizardPage() {
   const styles = useStyles2(getStyles);
   const wizard = useWizardState();
   const weightsValid = useWeightValidation(wizard.state);
-  const canProceed = wizard.step !== 1 || weightsValid;
+  const canProceed = wizard.step !== 2 || weightsValid;
+
+  const handleStartFresh = useCallback(() => {
+    wizard.goToStep(1);
+  }, [wizard]);
+
+  const handleImport = useCallback((imported: WizardState) => {
+    wizard.setFullState(imported);
+    wizard.goToStep(1);
+  }, [wizard]);
+
+  // Step 0: Welcome — full-width centered, no tabs/preview
+  if (wizard.step === 0) {
+    return (
+      <PluginPage>
+        <div className={styles.welcomeContainer}>
+          <StepWelcome onStartFresh={handleStartFresh} onImport={handleImport} />
+        </div>
+      </PluginPage>
+    );
+  }
 
   const renderStep = () => {
     switch (wizard.step) {
-      case 0:
-        return <StepSLOBasics state={wizard.state} update={wizard.update} />;
       case 1:
+        return <StepSLOBasics state={wizard.state} update={wizard.update} />;
+      case 2:
         return (
           <StepSLIQueries
             state={wizard.state}
@@ -31,7 +53,7 @@ function WizardPage() {
             removeSLI={wizard.removeSLI}
           />
         );
-      case 2:
+      case 3:
         return <StepReview state={wizard.state} update={wizard.update} onReset={wizard.reset} />;
       default:
         return null;
@@ -44,17 +66,22 @@ function WizardPage() {
         <div className={styles.wizard}>
           <TabsBar>
             {STEP_LABELS.map((label, i) => (
-              <Tab key={label} label={label} active={wizard.step === i} onChangeTab={() => wizard.goToStep(i)} />
+              <Tab
+                key={label}
+                label={label}
+                active={wizard.step === i + 1}
+                onChangeTab={() => wizard.goToStep(i + 1)}
+              />
             ))}
           </TabsBar>
           <div className={styles.stepContent}>{renderStep()}</div>
           <div className={styles.nav}>
-            {wizard.step > 0 && (
+            {wizard.step > 1 && (
               <Button variant="secondary" onClick={wizard.prevStep}>
                 Back
               </Button>
             )}
-            {wizard.step < 2 && (
+            {wizard.step < 3 && (
               <Button variant="primary" onClick={wizard.nextStep} disabled={!canProceed}>
                 Next
               </Button>
@@ -71,6 +98,13 @@ function WizardPage() {
 
 function getStyles(theme: GrafanaTheme2) {
   return {
+    welcomeContainer: css({
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: 'calc(100vh - 160px)',
+      minHeight: '400px',
+    }),
     container: css({
       display: 'flex',
       gap: theme.spacing(2),
