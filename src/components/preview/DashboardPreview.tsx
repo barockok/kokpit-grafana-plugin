@@ -62,7 +62,7 @@ function StatPanel({
   datasource?: string;
   staticData?: PanelData;
   window: string;
-  width: 'quarter' | 'half' | 'full';
+  width: 'quarter' | 'third' | 'half' | 'full';
   height: number;
   options?: Record<string, unknown>;
   fieldConfig?: FieldConfigSource;
@@ -79,8 +79,13 @@ function StatPanel({
   const data = staticData ?? liveData;
   const isLoading = data?.state === LoadingState.Loading;
   const isError = data?.state === LoadingState.Error;
-  const widthCls =
-    widthClass === 'full' ? styles.panelFull : widthClass === 'half' ? styles.panelHalf : styles.panelQuarter;
+  const widthClsMap: Record<string, string> = {
+    full: styles.panelFull,
+    half: styles.panelHalf,
+    third: styles.panelThird,
+    quarter: styles.panelQuarter,
+  };
+  const widthCls = widthClsMap[widthClass] ?? styles.panelQuarter;
 
   return (
     <div className={`${styles.panel} ${widthCls}`}>
@@ -135,7 +140,7 @@ function TimeseriesPanel({
   expr: string;
   datasource: string;
   window: string;
-  width: 'quarter' | 'half' | 'full';
+  width: 'quarter' | 'third' | 'half' | 'full';
   height: number;
   options?: Record<string, unknown>;
   fieldConfig?: FieldConfigSource;
@@ -156,8 +161,13 @@ function TimeseriesPanel({
 
   const isLoading = data?.state === LoadingState.Loading;
   const isError = data?.state === LoadingState.Error;
-  const widthCls =
-    widthClass === 'full' ? styles.panelFull : widthClass === 'half' ? styles.panelHalf : styles.panelQuarter;
+  const widthClsMap: Record<string, string> = {
+    full: styles.panelFull,
+    half: styles.panelHalf,
+    third: styles.panelThird,
+    quarter: styles.panelQuarter,
+  };
+  const widthCls = widthClsMap[widthClass] ?? styles.panelQuarter;
 
   return (
     <div className={`${styles.panel} ${widthCls}`}>
@@ -204,10 +214,12 @@ function SLIBreakdownPanel({
   perSLI,
   datasource,
   window,
+  target,
 }: {
   perSLI: Array<{ name: string; expr: string; datasource: string }>;
   datasource: string;
   window: string;
+  target: number;
 }) {
   const styles = useStyles2(getStyles);
   const { ref, width: containerWidth } = useContainerSize();
@@ -259,7 +271,12 @@ function SLIBreakdownPanel({
             fieldConfig={{
               defaults: {
                 unit: 'percentunit',
-                custom: { lineWidth: 2, fillOpacity: 10, spanNulls: true },
+                custom: { lineWidth: 2, fillOpacity: 15, spanNulls: true },
+                color: { mode: 'thresholds' },
+                thresholds: { mode: ThresholdsMode.Absolute, steps: [
+                  { color: 'red', value: -Infinity },
+                  { color: 'green', value: target },
+                ]},
               },
               overrides: [],
             }}
@@ -340,9 +357,9 @@ export function DashboardPreview({ state }: Props) {
             pluginId="stat"
             staticData={targetData}
             window={previewWindow}
-            width="quarter"
+            width="third"
             height={PANEL_HEIGHT}
-            options={{ colorMode: 'background', graphMode: 'none' }}
+            options={{ colorMode: 'background', graphMode: 'none', textMode: 'value' }}
             fieldConfig={{
               defaults: { unit: 'percent', thresholds: { mode: ThresholdsMode.Absolute, steps: [{ color: 'green', value: -Infinity }] } },
               overrides: [],
@@ -350,14 +367,14 @@ export function DashboardPreview({ state }: Props) {
           />
 
           <StatPanel
-            title="SLI Value"
+            title="Current SLI"
             pluginId="stat"
             expr={exprs.sli}
             datasource={ds}
             window={previewWindow}
-            width="quarter"
+            width="third"
             height={PANEL_HEIGHT}
-            options={{ colorMode: 'background', graphMode: 'area' }}
+            options={{ colorMode: 'background', graphMode: 'area', textMode: 'value' }}
             fieldConfig={{
               defaults: {
                 unit: 'percentunit',
@@ -377,7 +394,7 @@ export function DashboardPreview({ state }: Props) {
             expr={exprs.errorBudget}
             datasource={ds}
             window={previewWindow}
-            width="quarter"
+            width="third"
             height={PANEL_HEIGHT}
             options={{ showThresholdLabels: false, showThresholdMarkers: true }}
             fieldConfig={{
@@ -389,27 +406,6 @@ export function DashboardPreview({ state }: Props) {
                   { color: 'red', value: -Infinity },
                   { color: 'orange', value: 0.25 },
                   { color: 'green', value: 0.5 },
-                ]},
-              },
-              overrides: [],
-            }}
-          />
-
-          <TimeseriesPanel
-            title="Burn Rate"
-            expr={exprs.burnRate}
-            datasource={ds}
-            window={previewWindow}
-            width="quarter"
-            height={PANEL_HEIGHT}
-            options={{ legend: { displayMode: 'list', placement: 'bottom' } }}
-            fieldConfig={{
-              defaults: {
-                custom: { lineWidth: 2, fillOpacity: 10, spanNulls: true },
-                thresholds: { mode: ThresholdsMode.Absolute, steps: [
-                  { color: 'green', value: -Infinity },
-                  { color: 'orange', value: 6 },
-                  { color: 'red', value: 14.4 },
                 ]},
               },
               overrides: [],
@@ -429,7 +425,34 @@ export function DashboardPreview({ state }: Props) {
                 unit: 'percentunit',
                 min: 0,
                 max: 1,
-                custom: { lineWidth: 2, fillOpacity: 10, spanNulls: true },
+                custom: { lineWidth: 2, fillOpacity: 15, spanNulls: true },
+                color: { mode: 'thresholds' },
+                thresholds: { mode: ThresholdsMode.Absolute, steps: [
+                  { color: 'red', value: -Infinity },
+                  { color: 'green', value: state.target },
+                ]},
+              },
+              overrides: [],
+            }}
+          />
+
+          <TimeseriesPanel
+            title="Burn Rate"
+            expr={exprs.burnRate}
+            datasource={ds}
+            window={previewWindow}
+            width="full"
+            height={TIMESERIES_HEIGHT}
+            options={{ legend: { displayMode: 'list', placement: 'bottom' } }}
+            fieldConfig={{
+              defaults: {
+                custom: { lineWidth: 2, fillOpacity: 15, spanNulls: true },
+                color: { mode: 'thresholds' },
+                thresholds: { mode: ThresholdsMode.Absolute, steps: [
+                  { color: 'green', value: -Infinity },
+                  { color: 'orange', value: 6 },
+                  { color: 'red', value: 14.4 },
+                ]},
               },
               overrides: [],
             }}
@@ -440,6 +463,7 @@ export function DashboardPreview({ state }: Props) {
               perSLI={exprs.perSLI}
               datasource={ds}
               window={previewWindow}
+              target={state.target}
             />
           )}
         </div>
@@ -491,6 +515,10 @@ function getStyles(theme: GrafanaTheme2) {
     }),
     panelQuarter: css({
       flex: '1 1 calc(25% - 8px)',
+      minWidth: '140px',
+    }),
+    panelThird: css({
+      flex: '1 1 calc(33.333% - 8px)',
       minWidth: '140px',
     }),
     panelHalf: css({

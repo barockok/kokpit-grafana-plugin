@@ -5,7 +5,7 @@ import { useStyles2, TabsBar, Tab, Button } from '@grafana/ui';
 import { GrafanaTheme2 } from '@grafana/data';
 import { useWizardState } from '../hooks/useWizardState';
 import { StepSLOBasics } from '../components/wizard/StepSLOBasics';
-import { StepSLIQueries } from '../components/wizard/StepSLIQueries';
+import { StepSLIQueries, useWeightValidation } from '../components/wizard/StepSLIQueries';
 import { StepReview } from '../components/wizard/StepReview';
 import { DashboardPreview } from '../components/preview/DashboardPreview';
 
@@ -14,6 +14,8 @@ const STEP_LABELS = ['SLO Definition', 'SLI Queries', 'Review & Export'];
 function WizardPage() {
   const styles = useStyles2(getStyles);
   const wizard = useWizardState();
+  const weightsValid = useWeightValidation(wizard.state);
+  const canProceed = wizard.step !== 1 || weightsValid;
 
   const renderStep = () => {
     switch (wizard.step) {
@@ -53,7 +55,7 @@ function WizardPage() {
               </Button>
             )}
             {wizard.step < 2 && (
-              <Button variant="primary" onClick={wizard.nextStep}>
+              <Button variant="primary" onClick={wizard.nextStep} disabled={!canProceed}>
                 Next
               </Button>
             )}

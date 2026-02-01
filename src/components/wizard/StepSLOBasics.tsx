@@ -95,13 +95,13 @@ function getStyles(theme: GrafanaTheme2) {
     container: css({
       display: 'flex',
       flexDirection: 'column',
-      gap: theme.spacing(2),
+      gap: theme.spacing(1.5),
     }),
     advanced: css({
       display: 'flex',
       flexDirection: 'column',
-      gap: theme.spacing(2),
-      padding: theme.spacing(1, 0),
+      gap: theme.spacing(1.5),
+      padding: theme.spacing(0.5, 0),
     }),
     checkboxRow: css({
       display: 'flex',

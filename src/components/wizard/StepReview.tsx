@@ -157,22 +157,22 @@ function getStyles(theme: GrafanaTheme2) {
     container: css({
       display: 'flex',
       flexDirection: 'column',
-      gap: theme.spacing(2),
+      gap: theme.spacing(1.5),
     }),
     alertSection: css({
       display: 'flex',
       flexDirection: 'column',
-      gap: theme.spacing(1),
-      padding: theme.spacing(1, 0),
+      gap: theme.spacing(0.5),
+      padding: theme.spacing(0.5, 0),
     }),
     alertRow: css({
       display: 'flex',
-      gap: theme.spacing(2),
+      gap: theme.spacing(1),
     }),
     yamlSection: css({
       display: 'flex',
       flexDirection: 'column',
-      gap: theme.spacing(1),
+      gap: theme.spacing(0.5),
     }),
     actions: css({
       display: 'flex',

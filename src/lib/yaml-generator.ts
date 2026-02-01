@@ -22,6 +22,8 @@ export interface WizardState {
   dashboardMode: string;
   realtimeMode: string;
   realtimeWindow: string;
+  weightStepSize: number;
+  weightInputMode: 'sliders' | 'manual';
 }
 
 export interface SLIState {
@@ -55,6 +57,8 @@ export function createDefaultState(): WizardState {
     dashboardMode: DEFAULTS.dashboardMode,
     realtimeMode: DEFAULTS.realtimeMode,
     realtimeWindow: DEFAULTS.realtimeWindow,
+    weightStepSize: 0.05,
+    weightInputMode: 'sliders',
   };
 }
 
