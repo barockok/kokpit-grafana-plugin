@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
 import { css } from '@emotion/css';
-import { useStyles2, Input, Field, Select, Button, IconButton, TextArea, RadioButtonGroup, Slider, InlineLabel, Alert } from '@grafana/ui';
+import { useStyles2, Input, Field, Select, Button, IconButton, RadioButtonGroup, Slider, InlineLabel, Alert } from '@grafana/ui';
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import { getDataSourceSrv } from '@grafana/runtime';
 import type { WizardState, SLIState } from '../../lib/yaml-generator';
+import { QueryEditorContainer } from './QueryEditorContainer';
 
 interface Props {
   state: WizardState;
@@ -101,11 +102,10 @@ export function StepSLIQueries({ state, update, updateSLI, addSLI, removeSLI }: 
           </Field>
 
           <Field label="Query" description="Use {{window}} for window placeholder, {{.var}} for variables" className={styles.compactField}>
-            <TextArea
-              value={sli.query}
-              rows={3}
-              onChange={(e) => updateSLI(i, { query: e.currentTarget.value })}
-              placeholder="sum(rate(http_requests_total{code=~'5..'}[{{window}}])) / sum(rate(http_requests_total[{{window}}]))"
+            <QueryEditorContainer
+              datasourceName={sli.datasource}
+              query={sli.query}
+              onChange={(expr) => updateSLI(i, { query: expr })}
             />
           </Field>
 
